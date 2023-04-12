@@ -1,0 +1,15 @@
+{
+  "name": "timezhero/vercel-builds",
+  "description": "Are we there yet?",
+  "version": "1.0.0",
+  "minimum-stability": "dev",
+  "type": "wordpress-plugin",
+  "require": {
+    "illuminate/support": "^9.48"
+  },
+  "autoload": {
+    "psr-4": {
+      "Builds\\": "./src/"
+    }
+  }
+}
