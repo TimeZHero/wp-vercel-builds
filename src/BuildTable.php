@@ -96,7 +96,7 @@ class BuildTable extends WP_List_Table
             ->map(fn ($deployment) => [
                 'url'       => $this->formatUrl($deployment['url']),
                 'status'    => $this->formatStatus($deployment['status']),
-                'duration'  => $this->formatDuration($deployment['start'], $deployment['end']),
+                'duration'  => $this->formatDuration($deployment['start'] / 1000, $deployment['end']),
                 'date'      => date('d/m/y H:i:s', $deployment['start'] / 1000),
                 'version'   => $this->formatCommit($deployment['commit'])
             ]);
@@ -175,10 +175,10 @@ class BuildTable extends WP_List_Table
     /**
      * Format the build duration in the same format Vercel uses
      */
-    private function formatDuration(int $start, int $end): string
+    private function formatDuration(int $start, int|string $end): string
     {
         $duration = $end 
-            ? $end - $start
+            ? ($end / 1000) - $start
             : time() - $start;
         
         $format = '';
