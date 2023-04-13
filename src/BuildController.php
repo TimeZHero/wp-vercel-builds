@@ -19,6 +19,7 @@ class BuildController extends WP_REST_Controller
 
         $builds = new WP_Query([
             'post_type'     => 'vercel_builds',
+            'guid'          => $body->payload->url,
             'post_name'     => $body->payload->deployment->id
         ]);
     
@@ -39,9 +40,9 @@ class BuildController extends WP_REST_Controller
             'post_type' => 'vercel_builds',
             'post_name' => $body->payload->deployment->id,
             'post_status' => 'publish',
+            'guid' => "https://{$body->payload->url}",
             'meta_input' => [
                 'commit'    => $body->payload->deployment->meta->gitlabCommitSha,
-                'url'       => $body->payload->url,
                 'start'     => $body->createdAt,
                 'status'    => $body->type
             ]

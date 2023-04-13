@@ -86,7 +86,7 @@ class BuildTable extends WP_List_Table
             // ensure deployment is an array and enrich with additional metadata
             ->map(function ($deployment) {
                 $deployment = (array) $deployment;
-                foreach(['url', 'status', 'start', 'end', 'commit'] as $field) {
+                foreach(['status', 'start', 'end', 'commit'] as $field) {
                     $deployment[$field] = get_post_meta($deployment['ID'], $field, true);
                 }
 
@@ -94,7 +94,7 @@ class BuildTable extends WP_List_Table
             })
             // table friendly format
             ->map(fn ($deployment) => [
-                'url'       => $this->formatUrl($deployment['url']),
+                'url'       => $this->formatUrl($deployment['guid']),
                 'status'    => $this->formatStatus($deployment['status']),
                 'duration'  => $this->formatDuration($deployment['start'] / 1000, $deployment['end']),
                 'date'      => date('d/m/y H:i:s', $deployment['start'] / 1000),
@@ -166,8 +166,7 @@ class BuildTable extends WP_List_Table
      */
     private function formatUrl(string $url): string
     {
-        $shortUrl = Str::limit($url, 37);
-        $url = Str::start($url, 'https://');
+        $shortUrl = Str::limit(Str::after($url, '://'), 37);
         
         return sprintf('<a target="_blank" href="%1$s">%2$s</a>', $url, $shortUrl);
     }
@@ -177,7 +176,7 @@ class BuildTable extends WP_List_Table
      */
     private function formatDuration(int $start, int|string $end): string
     {
-        $duration = $end 
+        $duration = $end
             ? ($end / 1000) - $start
             : time() - $start;
         
