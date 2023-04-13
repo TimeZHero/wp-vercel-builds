@@ -16,10 +16,11 @@ class BuildController extends WP_REST_Controller
     public static function update(WP_REST_Request $request): WP_REST_Response|WP_Error
     {
         $body = json_decode($request->get_body());
+        $guid = "https://{$body->payload->url}";
 
         $builds = new WP_Query([
             'post_type'     => 'vercel_builds',
-            'guid'          => $body->payload->url,
+            'guid'          => $guid,
             'post_name'     => $body->payload->deployment->id
         ]);
     
@@ -40,7 +41,7 @@ class BuildController extends WP_REST_Controller
             'post_type' => 'vercel_builds',
             'post_name' => $body->payload->deployment->id,
             'post_status' => 'publish',
-            'guid' => "https://{$body->payload->url}",
+            'guid' => $guid,
             'meta_input' => [
                 'commit'    => $body->payload->deployment->meta->gitlabCommitSha,
                 'start'     => $body->createdAt,
