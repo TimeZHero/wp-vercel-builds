@@ -35,6 +35,7 @@ class BuildController extends WP_REST_Controller
 
         // add a new build
         return rest_ensure_response(wp_insert_post([
+            'post_title' => 'Vercel Deployment',
             'post_type' => 'vercel_builds',
             'post_name' => $body->payload->deployment->id,
             'post_status' => 'publish',
