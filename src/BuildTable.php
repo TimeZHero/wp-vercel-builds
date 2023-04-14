@@ -15,13 +15,12 @@ class BuildTable extends WP_List_Table
 
     public function render()
     {
-        $perPage        = 10;
+        $perPage        = 20;
         $columns        = $this->get_columns();
         $hidden         = $this->get_hidden_columns();
         $sortable       = $this->get_sortable_columns();
         $currentPage    = $this->get_pagenum();
-        $tableData      = $this->table_data($perPage, $currentPage);
-        $data           = $tableData['data'];
+        $tableData      = $this->table_data($perPage, $currentPage, $_REQUEST['s'] ?? null);
 
         $this->set_pagination_args([
             'total_items' => $tableData['meta']['total'],
@@ -29,7 +28,7 @@ class BuildTable extends WP_List_Table
         ]);
 
         $this->_column_headers = array($columns, $hidden, $sortable);
-        $this->items = $data;
+        $this->items = $tableData['data'];
     }
 
     /**
@@ -73,16 +72,34 @@ class BuildTable extends WP_List_Table
      *
      * @return array
      */
-    private function table_data($per_page, $page = 1)
+    private function table_data($per_page, $page = 1, $search = null)
     {
-        $deployments = new WP_Query([
-            'post_type' => 'vercel_builds',
-            'posts_per_page' => 10,
-            'no_found_rows' => true,
-            'orderby' => 'date',
-        ]);
+        $args = [
+            'post_type'         => 'vercel_builds',
+            'posts_per_page'    => $per_page,
+            'paged'             => $page,
+            'orderby'           => 'date',
+        ];
+
+        if (! empty($_REQUEST['s'])) {
+            $args['meta_query'] = [
+                'relation' => 'OR',
+                [
+                    'key'     => 'url',
+                    'value'   => $search,
+                    'compare' => 'LIKE'
+                ],
+                [
+                    'key'     => 'commit',
+                    'value'   => $search,
+                    'compare' => 'LIKE'
+                ]
+            ];
+        }
+
+        $query = new WP_Query($args);
         
-        $deployments = collect($deployments->get_posts())
+        $deployments = collect($query->get_posts())
             // ensure deployment is an array and enrich with additional metadata
             ->map(function ($deployment) {
                 $deployment = (array) $deployment;
@@ -104,7 +121,7 @@ class BuildTable extends WP_List_Table
         return [
             'data' => $deployments,
             'meta' => [
-                'total' => count($deployments),
+                'total' => $query->found_posts,
             ],
         ];
     }
@@ -141,19 +158,19 @@ class BuildTable extends WP_List_Table
     {
         $statusMap = [
             'deployment.created' => [
-                'text' => 'Building',
+                'text'  => 'Building',
                 'color' => 'blue',
             ],
             'deployment.canceled' => [
-                'text' => 'Canceled',
+                'text'  => 'Canceled',
                 'color' => 'orange',
             ],
             'deployment.error' => [
-                'text' => 'Error',
+                'text'  => 'Error',
                 'color' => 'red',
             ],
             'deployment.succeeded' => [
-                'text' => 'Completed',
+                'text'  => 'Completed',
                 'color' => 'green',
             ],
         ];

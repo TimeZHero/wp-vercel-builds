@@ -18,16 +18,20 @@ class BuildController extends WP_REST_Controller
         $body = json_decode($request->get_body());
 
         $builds = new WP_Query([
-            'post_type'     => 'vercel_builds',
-            'post_name'     => $body->payload->deployment->id,
-            'meta_key'      => 'url',
-            'meta_value'    => $body->payload->url,
+            'post_type'         => 'vercel_builds',
+            'post_name'         => $body->payload->deployment->id,
+            'no_found_rows'     => true,
+            'posts_per_page'    => 1,
+            'meta_key'          => 'url',
+            'meta_value'        => $body->payload->url,
         ]);
     
+        $builds = $builds->get_posts();
+        
         // if the build already exists, update it
-        if ($builds->post_count) {
+        if (count($builds)) {
             return rest_ensure_response(wp_update_post([
-                'ID' => $builds->get_posts()[0]->ID,
+                'ID' => $builds[0]->ID,
                 'meta_input' => [
                     'end'       => $body->createdAt,
                     'status'    => $body->type

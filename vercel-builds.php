@@ -7,12 +7,12 @@ use Builds\BuildTable;
  * 
  * @package     Vercel Builds
  * @author      Stefano Fasoli <stefanofasoli17@gmail.com>
- * @version     1.0.0
+ * @version     1.2.0
  * 
  * @wordpress-plugin
  * Plugin Name:     Vercel Builds
  * Description:     Vercel Builds
- * Version:         1.0.0
+ * Version:         1.2.0
  * Author:          Stefano Fasoli <stefanofasoli17@gmail.com>
  * Text Domain:     vercel_builds
  */
@@ -78,6 +78,14 @@ function vercel_builds_display_table() {
 	echo esc_html( 'Vercel deployments' );
 ?></h1>
 
+<?php
+	if (! empty($_REQUEST['s'])) {
+		echo sprintf('<span class="subtitle">'
+			. 'Search results for &#8220;%s&#8221;'
+			. '</span>', esc_html($_REQUEST['s']));
+	}
+?>
+
 <hr class="wp-header-end">
 
 <?php
@@ -86,8 +94,8 @@ $table->views();
 
 <form method="get" action="">
 	<input type="hidden" name="page" value="<?php echo esc_attr( $_REQUEST['page'] ); ?>" />
-	<input type="hidden" name="post_status" value="<?php echo isset( $_REQUEST['post_status'] ) ? esc_attr( $_REQUEST['post_status'] ) : ''; ?>" />
-	<?php $table->search_box( 'Search messages', 'builds' ); ?>
+	<input type="hidden" name="s" value="<?php echo esc_attr( $_REQUEST['s'] ?? '' ); ?>" />
+	<?php $table->search_box( 'Search builds', 's' ); ?>
 	<?php $table->display(); ?>
 </form>
 
