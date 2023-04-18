@@ -1,0 +1,12 @@
+#wp-admin-bar-vercel_badge { 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden
+} 
+
+#vercel_badge_status { 
+    flex-shrink: 0;
+    min-width: 100%;
+    min-height: 100%
+}

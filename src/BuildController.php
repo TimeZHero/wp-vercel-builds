@@ -17,6 +17,9 @@ class BuildController extends WP_REST_Controller
     {
         $body = json_decode($request->get_body());
 
+        // update current build status
+        update_option('vercel_current_build', $body->type);
+
         $builds = new WP_Query([
             'post_type'         => 'vercel_builds',
             'post_name'         => $body->payload->deployment->id,
@@ -25,15 +28,15 @@ class BuildController extends WP_REST_Controller
             'meta_key'          => 'url',
             'meta_value'        => $body->payload->url,
         ]);
-    
+
         $builds = $builds->get_posts();
-        
+
         // if the build already exists, update it
         if (count($builds)) {
             return rest_ensure_response(wp_update_post([
                 'ID' => $builds[0]->ID,
                 'meta_input' => [
-                    'end'       => $body->createdAt,
+                    'end'       => static::millisecondsToSeconds($body->createdAt),
                     'status'    => $body->type
                 ]
             ]));
@@ -48,7 +51,7 @@ class BuildController extends WP_REST_Controller
             'meta_input' => [
                 'url'       => $body->payload->url,
                 'commit'    => $body->payload->deployment->meta->gitlabCommitSha,
-                'start'     => $body->createdAt,
+                'start'     => static::millisecondsToSeconds($body->createdAt),
                 'status'    => $body->type
             ]
         ]));
@@ -57,8 +60,29 @@ class BuildController extends WP_REST_Controller
     /**
      * Answer with the current build status
      */
-    public static function poll()
+    public static function poll(): WP_REST_Response
     {
-        // TODO:
+        // defaults
+        $code = 404;
+        $data = [];
+        
+        if ($status = get_option('vercel_current_build')) {
+            $data = [
+                'status' => $status,
+                'badge' => Build::status($status)->badge,
+            ];
+            
+            $code = 200;
+        }
+        
+        return new WP_REST_Response((object) $data, $code, ['Content-type' => 'application/json']);
+    }
+
+    /**
+     * Converts milliseconds to seconds
+     */
+    private static function millisecondsToSeconds(int $milliseconds): int
+    {
+        return (int) round($milliseconds, -3) / 1000;
     }
 }

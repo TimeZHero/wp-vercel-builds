@@ -8,7 +8,10 @@ use WP_Query;
 
 class BuildTable extends WP_List_Table
 {
-    public static function make()
+    /**
+     * Returns a static instance
+     */
+    public static function make(): static
     {
         return new static;
     }
@@ -113,8 +116,8 @@ class BuildTable extends WP_List_Table
             ->map(fn ($deployment) => [
                 'url'       => $this->formatUrl($deployment['url']),
                 'status'    => $this->formatStatus($deployment['status']),
-                'duration'  => $this->formatDuration($deployment['start'] / 1000, $deployment['end']),
-                'date'      => date('d/m/y H:i:s', $deployment['start'] / 1000),
+                'duration'  => $this->formatDuration($deployment['start'], $deployment['end']),
+                'date'      => date('d/m/y H:i:s', $deployment['start']),
                 'version'   => $this->formatCommit($deployment['commit'])
             ]);
 
@@ -156,26 +159,9 @@ class BuildTable extends WP_List_Table
 
     private function formatStatus($status)
     {
-        $statusMap = [
-            'deployment.created' => [
-                'text'  => 'Building',
-                'color' => 'blue',
-            ],
-            'deployment.canceled' => [
-                'text'  => 'Canceled',
-                'color' => 'orange',
-            ],
-            'deployment.error' => [
-                'text'  => 'Error',
-                'color' => 'red',
-            ],
-            'deployment.succeeded' => [
-                'text'  => 'Completed',
-                'color' => 'green',
-            ],
-        ];
+        $build = Build::status($status);
 
-        return "<span style=\"color:{$statusMap[$status]['color']}\">{$statusMap[$status]['text']}</span>";
+        return "<span style=\"color:{$build->color}\">{$build->text}</span>";
     }
 
     /**
@@ -194,9 +180,7 @@ class BuildTable extends WP_List_Table
      */
     private function formatDuration(int $start, int|string $end): string
     {
-        $duration = $end
-            ? ($end / 1000) - $start
-            : time() - $start;
+        $duration = ($end ?: time()) - $start;
         
         $format = '';
         $values = [];
@@ -245,11 +229,3 @@ class BuildTable extends WP_List_Table
         return "<center>{$string}</center>";
     }
 }
-
-?>
-
-<script>
-function copyToClipboard(element) {
-    navigator.clipboard.writeText(element.getAttribute('value'));
-}
-</script>
