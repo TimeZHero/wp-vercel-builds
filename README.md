@@ -9,7 +9,6 @@
         <img src="./src/assets/img/created.svg" alt="Logo">
         <img src="./src/assets/img/canceled.svg" alt="Logo">
         <img src="./src/assets/img/error.svg" alt="Logo">
-        <img src="./src/assets/img/default.svg" alt="Logo">
     </div>
     <br />
     <a href="https://github.com/TimeZHero/wp-vercel-builds">
