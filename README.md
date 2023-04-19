@@ -1,14 +1,22 @@
 <h1 align="center">Wordpress Vercel Builds</h1>
 <br />
 <p align="center">
-  <a href="https://github.com/TimeZHero/wp-vercel-builds">
-    <img src="./screenshot.png" alt="Logo">
-  </a>
-
-<p align="center">
-    Are we there yet?
-  </p>
+    <p align="center">
+        Are we there yet?
+    </p>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+        <img src="./src/assets/img/succeeded.svg" alt="Logo">
+        <img src="./src/assets/img/created.svg" alt="Logo">
+        <img src="./src/assets/img/canceled.svg" alt="Logo">
+        <img src="./src/assets/img/error.svg" alt="Logo">
+        <img src="./src/assets/img/default.svg" alt="Logo">
+    </div>
+    <br />
+    <a href="https://github.com/TimeZHero/wp-vercel-builds">
+        <img src="./screenshot.png" alt="Logo">
+    </a>
 </p>
+
 
 ## Install
 
