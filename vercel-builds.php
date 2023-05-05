@@ -3,6 +3,7 @@
 use Builds\Build;
 use Builds\BuildController;
 use Builds\BuildTable;
+use Illuminate\Support\Arr;
 /**
  * Vercel Builds
  * 
@@ -80,6 +81,7 @@ add_action('rest_api_init', function () use ($vercelRequestMiddleware) {
 
 // Print the build table page on the admin screen
 $buildPageTemplate = function () {
+	! function_exists('add_thickbox') ?: add_thickbox();
 	$table = BuildTable::make();
     $table->render();
 	
@@ -112,17 +114,39 @@ $buildPageTemplate = function () {
 	<?php
 };
 
+$logsPageTemplate = function () {
+	print('<div class="modal-window-container">');
+	
+	if (! Arr::has($_REQUEST, ['modal_window', 'deployment_id'])) {
+		print('Please access this page properly.</div>');
+		
+		return;
+	}
+	
+	$log = get_post_meta($_REQUEST['deployment_id'], 'log', true) ?: 'No logs found for this build';
+
+	print("{$log}</div>");
+};
+
 // Add menu page
 add_action(
-	'admin_menu', 
+	'admin_menu',
 	fn () => add_submenu_page(
         'index.php',
         __('Build status', 'vercel_builds'),
         __('Build status', 'vercel_builds'),
         apply_filters('vercel_builds_capability', 'manage_options'),
-        'build-status',
+        'build_status',
         $buildPageTemplate,
-    ),
+    ) 
+	&& add_submenu_page( 
+		null,
+		__('Build Logs', 'vercel_builds'),
+		__('Build Logs', 'vercel_builds'),
+		apply_filters('vercel_builds_capability', 'manage_options'),
+		'build_logs',
+		$logsPageTemplate
+	),
 	priority: 8,
 );
 
@@ -133,17 +157,33 @@ add_action('admin_bar_menu', function (WP_Admin_Bar $bar) {
 	$bar->add_node([
 		'id' 		=> 'vercel_badge',
 		'title' 	=> sprintf('<img id="vercel_badge_status" src="%s" alt />', Build::status($status)->badge),
-		'href' 		=> admin_url('index.php?page=build-status'),
+		'href' 		=> admin_url('index.php?page=build_status'),
 		'parent' 	=> 'top-secondary',
 	]);
 });
 
-// Badge polling & CSS
+// CSS & Js
 add_action('admin_enqueue_scripts', function () {
-	$assetDir = plugin_dir_url(__FILE__).'src/assets';
+	// Badge polling & CSS
+	$assetDir = 'src/assets';
 	
-	wp_register_style('vercel_badge_style', $assetDir.'/css/badge.css');
+	wp_register_style('vercel_badge_style', plugins_url("{$assetDir}/css/badge.css", __FILE__));
+	wp_register_script('vercel_badge_polling', plugins_url("{$assetDir}/js/badge.js", __FILE__));
+	
 	wp_enqueue_style('vercel_badge_style');
-	wp_register_script('vercel_badge_polling', $assetDir.'/js/badge.js');
 	wp_enqueue_script('vercel_badge_polling');
+	
+	if (! function_exists('get_current_screen')) {
+		return;
+	}
+	
+	// Logs modal
+	if (get_current_screen()?->id === 'admin_page_build_logs' && ($_REQUEST['modal_window'] ?? false)) {
+		wp_enqueue_style('logs_modal_window', plugins_url("{$assetDir}/css/modal-window.css", __FILE__));
+	}
+		
+	// Build page
+	if (get_current_screen()?->id === 'dashboard_page_build_status') {
+		wp_enqueue_script('vercel_builds_utilities', plugins_url('src/assets/js/utils.js', __FILE__));
+	}
 });

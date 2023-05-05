@@ -56,6 +56,22 @@ class Build
     }
 
     /**
+     * Whether or not it is a new build event
+     */
+    public function isNewBuild(): bool
+    {
+        return $this->status === 'deployment.created';
+    }
+
+    /**
+     * Whether or not the build was not executed correctly
+     */
+    public function hasIssues(): bool
+    {
+        return $this->status === 'deployment.error';
+    }
+
+    /**
      * Return the url of the requested badge
      */
     private function badgeUrl(string $slug): string

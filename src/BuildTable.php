@@ -2,12 +2,24 @@
 
 namespace Builds;
 
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use WP_List_Table;
 use WP_Query;
 
 class BuildTable extends WP_List_Table
 {
+    /**
+     * Querystring arguments for the modal url
+     */
+    const MODAL_ARGS = [
+        'modal_window' => true,
+        'page' => 'build_logs',
+        'TB_iframe' => true,
+        'width' => 1200,
+        'height' => 600,
+    ];
+    
     /**
      * Returns a static instance
      */
@@ -46,7 +58,8 @@ class BuildTable extends WP_List_Table
             'status'        => $this->center('Status'),
             'duration'      => $this->center('Duration'),
             'date'          => $this->center('Date'),
-            'version'       => $this->center('Version')
+            'version'       => $this->center('Version'),
+            'actions'       => $this->center('Actions'),
         ];
     }
 
@@ -75,11 +88,11 @@ class BuildTable extends WP_List_Table
      *
      * @return array
      */
-    private function table_data($per_page, $page = 1, $search = null)
+    private function table_data($perPage, $page = 1, $search = null)
     {
         $args = [
             'post_type'         => 'vercel_builds',
-            'posts_per_page'    => $per_page,
+            'posts_per_page'    => $perPage,
             'paged'             => $page,
             'orderby'           => 'date',
         ];
@@ -118,7 +131,10 @@ class BuildTable extends WP_List_Table
                 'status'    => $this->formatStatus($deployment['status']),
                 'duration'  => $this->formatDuration($deployment['start'], $deployment['end']),
                 'date'      => date('d/m/y H:i:s', $deployment['start']),
-                'version'   => $this->formatCommit($deployment['commit'])
+                'version'   => $this->formatCommit($deployment['commit']),
+                'statusCode'=> $deployment['status'],
+                'post_id'   => $deployment['ID'],
+                'actions'   => $this->getActions($deployment)
             ]);
 
         return [
@@ -127,6 +143,23 @@ class BuildTable extends WP_List_Table
                 'total' => $query->found_posts,
             ],
         ];
+    }
+
+    /**
+     * Retrieve deployment available actions
+     */
+    protected function getActions(array $deployment): string
+    {
+        if ($deployment['status'] === 'deployment.error') {
+            // View Logs
+            $querystring = Arr::query(static::MODAL_ARGS);
+            $deploymentId = sprintf('deployment_id=%1$s', $deployment['ID']);
+            $url = admin_url("admin.php?{$deploymentId}&{$querystring}");
+            
+            return sprintf('<a href="%1$s" style="width:36px;display:flex;align-items:center;justify-content:center;" class="thickbox button"><span class="dashicons dashicons-search"></span></a>', $url);
+        }
+
+        return '';
     }
 
     /**
@@ -152,12 +185,17 @@ class BuildTable extends WP_List_Table
      *
      * @return mixed
      */
-    protected function handle_row_actions($item, $column_name, $primary)
+    protected function handle_row_actions($item, $columnName, $primary)
     {
-        return $this->row_actions([]);
+        $actions = [];
+        
+        return $this->row_actions($actions);
     }
 
-    private function formatStatus($status)
+    /**
+     * Formats the status with the approriate style
+     */
+    private function formatStatus(string $status): string
     {
         $build = Build::status($status);
 
@@ -169,10 +207,11 @@ class BuildTable extends WP_List_Table
      */
     private function formatUrl(string $url): string
     {
-        $shortUrl = Str::limit($url, 37);
-        $url = "https://{$url}";
-        
-        return sprintf('<a target="_blank" href="%1$s">%2$s</a>', $url, $shortUrl);
+        return sprintf(
+            '<a target="_blank" href="%1$s">%2$s</a>', 
+            "https://{$url}",
+            Str::limit($url, 32)
+        );
     }
 
     /**

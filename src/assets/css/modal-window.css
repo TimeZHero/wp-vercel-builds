@@ -1,0 +1,17 @@
+#adminmenumain, #wpadminbar {
+    display: none;
+}
+
+#wpcontent {
+    margin-left: 18px !important;
+}
+
+html.wp-toolbar {
+    padding-top: 0;
+}
+
+.modal-window-container img {
+    max-width: 100%;
+    width: auto;
+    height: auto;
+}

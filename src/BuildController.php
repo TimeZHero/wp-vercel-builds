@@ -2,6 +2,7 @@
 
 namespace Builds;
 
+use Illuminate\Support\Str;
 use WP_Error;
 use WP_Query;
 use WP_REST_Controller;
@@ -10,6 +11,21 @@ use WP_REST_Response;
 
 class BuildController extends WP_REST_Controller
 {
+    /**
+     * The endpoint to fetch deployments
+     */
+    const DEPLOYMENT_ENDPOINT = 'https://api.vercel.com/v2/deployments';
+
+    /**
+     * The tag used to identify which logs to capture
+     */
+    protected static $logTag = '[build_error]';
+
+    /**
+     * The stream to fetch the logs from
+     */
+    protected static $logStream = 'stderr';
+    
     /**
      * Add or update a build
      */
@@ -32,7 +48,32 @@ class BuildController extends WP_REST_Controller
         $builds = $builds->get_posts();
 
         // if the build already exists, update it
-        if (count($builds)) {
+        if (! empty($builds)) {
+            // if the build had issues, get the build log
+            if (Build::status($body->type)->hasIssues()) {
+                $endpoint = sprintf('%1$s/%2$s/events', static::DEPLOYMENT_ENDPOINT, $body->payload->deployment->id);
+                $token = constant('VERCEL_API_BEARER_TOKEN');
+
+                $response = wp_remote_get($endpoint, [
+                    'headers' => [
+                        'Authorization' => "Bearer {$token}"
+                    ]
+                ]);
+
+                if (! is_wp_error($response)) {
+                    $stream = apply_filters('vercel_builds_log_stream', static::$logStream);
+                    $tag = apply_filters('vercel_builds_log_tag', static::$logTag);
+                    
+                    $log = collect(json_decode($response['body']))
+                        ->filter(fn ($log) => $log->type === $stream && Str::startsWith($log->payload->text, $tag))
+                        ->map(fn ($log) => Str::of($log->payload->text)->ltrim($tag))
+                        ->implode('<br>');
+
+                    update_post_meta($builds[0]->ID, 'log', $log);
+                }
+            }
+
+            // update the build
             return rest_ensure_response(wp_update_post([
                 'ID' => $builds[0]->ID,
                 'meta_input' => [
@@ -43,18 +84,23 @@ class BuildController extends WP_REST_Controller
         }
 
         // add a new build
-        return rest_ensure_response(wp_insert_post([
-            'post_title' => 'Vercel Deployment',
-            'post_type' => 'vercel_builds',
-            'post_name' => $body->payload->deployment->id,
-            'post_status' => 'publish',
-            'meta_input' => [
-                'url'       => $body->payload->url,
-                'commit'    => $body->payload->deployment->meta->gitlabCommitSha,
-                'start'     => static::millisecondsToSeconds($body->createdAt),
-                'status'    => $body->type
-            ]
-        ]));
+        if (Build::status($body->type)->isNewBuild()) {
+            return rest_ensure_response(wp_insert_post([
+                'post_title' => 'Vercel Deployment',
+                'post_type' => 'vercel_builds',
+                'post_name' => $body->payload->deployment->id,
+                'post_status' => 'publish',
+                'meta_input' => [
+                    'url'       => $body->payload->url,
+                    'commit'    => $body->payload->deployment->meta->gitlabCommitSha,
+                    'start'     => static::millisecondsToSeconds($body->createdAt),
+                    'status'    => $body->type
+                ]
+            ]));
+        }
+        
+        // could not find a deployment to update
+        return new WP_Error(404, 'Deployment not found', (object) []);
     }
 
     /**

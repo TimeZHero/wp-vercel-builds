@@ -1,21 +1,14 @@
 <h1 align="center">Wordpress Vercel Builds</h1>
 <br />
 <p align="center">
-    <p align="center">
-        <img src="./src/assets/img/succeeded.svg" alt="Logo">
-        <img src="./src/assets/img/created.svg" alt="Logo">
-        <img src="./src/assets/img/canceled.svg" alt="Logo">
-        <img src="./src/assets/img/error.svg" alt="Logo">
-    </p>
-    <p align="center">
-        Are we there yet?
-    </p>
-    <br />
-    <a href="https://github.com/TimeZHero/wp-vercel-builds">
-        <img src="./screenshot.png" alt="Logo">
-    </a>
-</p>
+  <a href="https://github.com/TimeZHero/wp-vercel-builds">
+    <img src="./screenshot.png" alt="Logo">
+  </a>
 
+<p align="center">
+    Are we there yet?
+  </p>
+</p>
 
 ## Install
 
@@ -30,11 +23,14 @@
 
 2. Run `composer require "timezhero/vercel-builds"`
 3. Configure a Vercel webhook pointing to `https://yoursite.com/wp-json/builds/update`
-4. Define a constant `VERCEL_SIGNATURE_KEY` with the key provided by Vercel
-5. Activate the plugin and check out your dashboard tab
+4. Define a constant `VERCEL_SIGNATURE_KEY` with the Vercel key created in Team > Settings > Webhooks
+5. Define a constant `VERCEL_API_BEARER_TOKEN` with the Vercel token created in Account > Tokens
+6. Activate the plugin and check out your dashboard tab
 
 ## Hooks
 1. `vercel_builds_capability`, to set the capability to view the build dashboard. The badge will be viewable to anyone. default: manage_options
+2. `vercel_builds_log_tag`, to set the tag used to identify which logs to display in the admin dashboard. default: [build_error]
+3. `vercel_builds_log_stream`, to set the logstream used on Vercel. default: stderr
 
 ## If you have multiple Vercel projects
 
@@ -47,10 +43,10 @@ A `lambda.mjs` file is included in the repo as an example of a possible implemen
 ## Contents
 1. Polling on badge to quickly know the state of the latest build
 2. Can view builds, with their status, date and duration
-3. Customer-side debugging is possible by reviewing previous versions from the url
-4. The commit SHA is included to help spot any regression bug
+3. Can view custom build logs in case the build failed
+4. Customer-side debugging is possible by reviewing previous versions from the url
+5. The commit SHA is included to help spot any regression bug
 
 ## Roadmap
-2. Add a button to allow the customer to pin a previous deployment as production
-3. Include customer-friendly build logging in case of failure. May help when the issue is located in the Frontend application
-4. Someday, refactor for better code
+1. Add a button to allow the customer to pin a previous deployment as production
+2. Someday, refactor for better code
