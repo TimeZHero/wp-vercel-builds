@@ -47,6 +47,11 @@ A `lambda.mjs` file is included in the repo as an example of a possible implemen
 4. Customer-side debugging is possible by reviewing previous versions from the url
 5. The commit SHA is included to help spot any regression bug
 
+## Known Issues
+- Due to the absence of a queued deployment event, the following problems arise:
+  1. Building status from a queued deployment may be overridden by the previous build's result until the queued deployment is completed
+  2. A deployment which was created under the queued status will display its duration equal to the time in the queue + the effective build time
+
 ## Roadmap
 1. Add a button to allow the customer to pin a previous deployment as production
 2. Someday, refactor for better code
